@@ -1,87 +1,178 @@
-<script>
-  // ---------- Player stats container ----------
-  let playersData = [];
-
-  // ---------- Game variables ----------
-  let scores = [501, 501];
-  let currentPlayer = 0;
-  const impossibleScores = [163,166,169,172,173,175,176,178,179];
-
-  // ---------- Logging function ----------
-  function log(message) {
-    const logDiv = document.getElementById('log');
-    logDiv.innerHTML += `<div>${message}</div>`;
-    logDiv.scrollTop = logDiv.scrollHeight;
-  }
-
-  // ---------- Load player stats from local JSON ----------
-  async function loadPlayersData() {
-    try {
-      const response = await fetch('players.json');
-      playersData = await response.json();
-      log("Player stats loaded!");
-    } catch (error) {
-      console.error("Failed to load player stats!", error);
-      log("Failed to load player stats!");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cricket 501</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0b6623;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
     }
-  }
-  loadPlayersData();
+    h1, h2 { text-align: center; }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #144d2a;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0;
+    }
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #f4c430;
+      font-weight: bold;
+    }
+    select, input {
+      padding: 8px;
+      border-radius: 4px;
+      border: none;
+    }
+    .log {
+      background: #083d1b;
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .player {
+      flex: 1;
+      text-align: center;
+    }
+    .active {
+      border: 2px solid #f4c430;
+      padding: 10px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏏 Cricket 501 🏏</h1>
+  <div class="container">
+    <h2>Choose Category</h2>
+    <div class="row">
+      <select id="categorySelect">
+        <option value="odi_runs">ODI Runs</option>
+        <option value="test_runs">Test Runs</option>
+        <option value="t20i_runs">T20I Runs</option>
+        <option value="highest_score">Highest Score</option>
+      </select>
+      <button onclick="newTurn()">New Turn</button>
+    </div>
 
-  // ---------- Get a player's stat ----------
-  function getPlayerStat(playerName, category) {
-    const player = playersData.find(p => p.name.toLowerCase() === playerName.toLowerCase());
-    if (!player) return 0;
+    <h2>Scores</h2>
+    <div class="row">
+      <div id="p1" class="player active">Player 1: <span id="score1">501</span></div>
+      <div id="p2" class="player">Player 2: <span id="score2">501</span></div>
+    </div>
 
-    let score = player[category] || 0;
+    <div class="row">
+      <input type="text" id="answerInput" placeholder="Enter player name" />
+      <button onclick="submitAnswer()">Submit</button>
+    </div>
 
-    // Apply darts rules
-    if (score > 180 || impossibleScores.includes(score)) {
-      return 0;
+    <h2>Game Log</h2>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    // ---------- Player stats container ----------
+    let playersData = [];
+
+    // ---------- Game variables ----------
+    let scores = [501, 501];
+    let currentPlayer = 0;
+    const impossibleScores = [163,166,169,172,173,175,176,178,179];
+
+    // ---------- Logging function ----------
+    function log(message) {
+      const logDiv = document.getElementById('log');
+      logDiv.innerHTML += `<div>${message}</div>`;
+      logDiv.scrollTop = logDiv.scrollHeight;
     }
 
-    return score;
-  }
+    // ---------- Load player stats from local JSON ----------
+    async function loadPlayersData() {
+      try {
+        const response = await fetch('players.json');
+        playersData = await response.json();
+        log("Player stats loaded!");
+      } catch (error) {
+        console.error("Failed to load player stats!", error);
+        log("Failed to load player stats!");
+      }
+    }
+    loadPlayersData();
 
-  // ---------- Start a new turn ----------
-  function newTurn() {
-    document.getElementById('answerInput').value = '';
-    document.getElementById('categorySelect').disabled = false;
-    log(`Player ${currentPlayer + 1}'s turn started.`);
-  }
+    // ---------- Get a player's stat ----------
+    function getPlayerStat(playerName, category) {
+      const player = playersData.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+      if (!player) return 0;
 
-  // ---------- Submit player answer ----------
-  function submitAnswer() {
-    const playerName = document.getElementById('answerInput').value.trim();
-    const category = document.getElementById('categorySelect').value;
+      let score = player[category] || 0;
 
-    if (!playerName) return alert("Enter a player name");
+      // Apply darts rules
+      if (score > 180 || impossibleScores.includes(score)) {
+        return 0;
+      }
 
-    const score = getPlayerStat(playerName, category);
-
-    scores[currentPlayer] -= score;
-    document.getElementById(`score${currentPlayer + 1}`).innerText = scores[currentPlayer];
-
-    log(`Player ${currentPlayer + 1} answered ${playerName} (${category}) → Score: ${score}`);
-
-    if (scores[currentPlayer] <= 0 && scores[currentPlayer] >= -10) {
-      checkWin();
-      return;
+      return score;
     }
 
-    switchPlayer();
-  }
+    // ---------- Start a new turn ----------
+    function newTurn() {
+      document.getElementById('answerInput').value = '';
+      document.getElementById('categorySelect').disabled = false;
+      log(`Player ${currentPlayer + 1}'s turn started.`);
+    }
 
-  // ---------- Switch players ----------
-  function switchPlayer() {
-    document.getElementById(`p${currentPlayer + 1}`).classList.remove('active');
-    currentPlayer = (currentPlayer + 1) % 2;
-    document.getElementById(`p${currentPlayer + 1}`).classList.add('active');
-    log(`Now Player ${currentPlayer + 1}'s turn.`);
-  }
+    // ---------- Submit player answer ----------
+    function submitAnswer() {
+      const playerName = document.getElementById('answerInput').value.trim();
+      const category = document.getElementById('categorySelect').value;
 
-  // ---------- Check for a winner ----------
-  function checkWin() {
-    log(`🎉 Player ${currentPlayer + 1} is in the winning zone! (${scores[currentPlayer]})`);
-    alert(`Player ${currentPlayer + 1} wins with ${scores[currentPlayer]}!`);
-  }
-</script>
+      if (!playerName) return alert("Enter a player name");
+
+      const score = getPlayerStat(playerName, category);
+
+      scores[currentPlayer] -= score;
+      document.getElementById(`score${currentPlayer + 1}`).innerText = scores[currentPlayer];
+
+      log(`Player ${currentPlayer + 1} answered ${playerName} (${category}) → Score: ${score}`);
+
+      if (scores[currentPlayer] <= 0 && scores[currentPlayer] >= -10) {
+        checkWin();
+        return;
+      }
+
+      switchPlayer();
+    }
+
+    // ---------- Switch players ----------
+    function switchPlayer() {
+      document.getElementById(`p${currentPlayer + 1}`).classList.remove('active');
+      currentPlayer = (currentPlayer + 1) % 2;
+      document.getElementById(`p${currentPlayer + 1}`).classList.add('active');
+      log(`Now Player ${currentPlayer + 1}'s turn.`);
+    }
+
+    // ---------- Check for a winner ----------
+    function checkWin() {
+      log(`🎉 Player ${currentPlayer + 1} is in the winning zone! (${scores[currentPlayer]})`);
+      alert(`Player ${currentPlayer + 1} wins with ${scores[currentPlayer]}!`);
+    }
+  </script>
+</body>
+</html>
