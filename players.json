@@ -1,14 +1,32 @@
-// Load player stats from local JSON file
-async function loadPlayersData() {
-  try {
-    const response = await fetch('players.json');
-    playersData = await response.json();
-    console.log("Player stats loaded!");
-  } catch (error) {
-    console.error("Failed to load player stats!", error);
+[
+  {
+    "name": "Virat Kohli",
+    "odi_runs": 13848,
+    "test_runs": 8676,
+    "t20i_runs": 3689,
+    "highest_score": 183,
+    "odi_wickets": 4,
+    "test_wickets": 1,
+    "t20i_wickets": 0
+  },
+  {
+    "name": "Joe Root",
+    "odi_runs": 6207,
+    "test_runs": 11416,
+    "t20i_runs": 1677,
+    "highest_score": 254,
+    "odi_wickets": 28,
+    "test_wickets": 28,
+    "t20i_wickets": 0
+  },
+  {
+    "name": "Babar Azam",
+    "odi_runs": 6565,
+    "test_runs": 4000,
+    "t20i_runs": 3150,
+    "highest_score": 143,
+    "odi_wickets": 0,
+    "test_wickets": 0,
+    "t20i_wickets": 0
   }
-}
-
-// Call this when the page loads
-loadPlayersData();
-
+]
