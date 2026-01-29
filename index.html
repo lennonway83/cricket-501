@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Cricket 501</title>
@@ -11,9 +12,7 @@
       margin: 0;
       padding: 20px;
     }
-    h1, h2 {
-      text-align: center;
-    }
+    h1, h2 { text-align: center; }
     .container {
       max-width: 800px;
       margin: auto;
@@ -65,36 +64,74 @@
     <h2>Choose Category</h2>
     <div class="row">
       <select id="categorySelect">
-        <option value="runs">Career Runs (Player)</option>
-        <option value="wickets">Career Wickets (Bowler)</option>
-        <option value="odiHighScore">ODI High Score</option>
-        <option value="testCenturies">Test Centuries</option>
-        <option value="teamScore">Team Match Score</option>
+        <option value="odi_runs">ODI Runs</option>
+        <option value="test_runs">Test Runs</option>
+        <option value="t20i_runs">T20I Runs</option>
+        <option value="highest_score">Highest Score</option>
       </select>
       <button onclick="newTurn()">New Turn</button>
-    </div><h2>Scores</h2>
-<div class="row">
-  <div id="p1" class="player active">Player 1: <span id="score1">501</span></div>
-  <div id="p2" class="player">Player 2: <span id="score2">501</span></div>
-</div>
+    </div>
 
-<div class="row">
-  <input type="number" id="answerInput" placeholder="Enter numeric answer" />
-  <button onclick="submitAnswer()">Submit</button>
-</div>
+    <h2>Scores</h2>
+    <div class="row">
+      <div id="p1" class="player active">Player 1: <span id="score1">501</span></div>
+      <div id="p2" class="player">Player 2: <span id="score2">501</span></div>
+    </div>
 
-<h2>Game Log</h2>
-<div class="log" id="log"></div>
+    <div class="row">
+      <input type="text" id="answerInput" placeholder="Enter player name" />
+      <button onclick="submitAnswer()">Submit</button>
+    </div>
 
-  </div>  <script>
+    <h2>Game Log</h2>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    const apiKey = "fIGbQ0vXikWEdVvYaoK5TjB9PSEEJRu9boc0AhqoHuNTrkZpRs7gM5RLoxWx";
     let scores = [501, 501];
     let currentPlayer = 0;
-    const impossibleScores = [163, 166, 169, 172, 173, 175, 176, 178, 179];
+    const impossibleScores = [163,166,169,172,173,175,176,178,179];
+    let playersData = [];
 
     function log(message) {
       const logDiv = document.getElementById('log');
       logDiv.innerHTML += `<div>${message}</div>`;
       logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    async function loadPlayersData() {
+      try {
+        const response = await fetch(`https://cricket.sportmonks.com/api/v2.0/players?api_token=${apiKey}`);
+        const data = await response.json();
+        playersData = data.data.map(player => ({
+          id: player.id,
+          name: player.fullname
+        }));
+        log("Player list loaded from SportMonks!");
+      } catch (error) {
+        console.error("Failed to load players:", error);
+        log("Failed to load player list!");
+      }
+    }
+
+    async function getPlayerStat(playerName, category) {
+      const player = playersData.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+      if (!player) return 0;
+
+      try {
+        const response = await fetch(`https://cricket.sportmonks.com/api/v2.0/players/${player.id}/career?api_token=${apiKey}`);
+        const career = await response.json();
+        let score = career.data[category] || 0;
+
+        if (score > 180 || impossibleScores.includes(score)) {
+          return 0;
+        }
+        return score;
+      } catch (error) {
+        console.error(error);
+        return 0;
+      }
     }
 
     function newTurn() {
@@ -103,22 +140,18 @@
       log(`Player ${currentPlayer + 1}'s turn started.`);
     }
 
-    function submitAnswer() {
-      let value = parseInt(document.getElementById('answerInput').value);
-      const category = document.getElementById('categorySelect').selectedOptions[0].text;
+    async function submitAnswer() {
+      const playerName = document.getElementById('answerInput').value.trim();
+      const category = document.getElementById('categorySelect').value;
 
-      if (isNaN(value)) return alert('Enter a number');
+      if (!playerName) return alert("Enter a player name");
 
-      let score = value;
-
-      if (value > 180 || impossibleScores.includes(value)) {
-        score = 0;
-      }
+      const score = await getPlayerStat(playerName, category);
 
       scores[currentPlayer] -= score;
       document.getElementById(`score${currentPlayer + 1}`).innerText = scores[currentPlayer];
 
-      log(`Player ${currentPlayer + 1} (${category}) answered ${value} → Scores ${score}`);
+      log(`Player ${currentPlayer + 1} answered ${playerName} (${category}) → Score: ${score}`);
 
       if (scores[currentPlayer] <= 0 && scores[currentPlayer] >= -10) {
         checkWin();
@@ -139,5 +172,9 @@
       log(`🎉 Player ${currentPlayer + 1} is in the winning zone! (${scores[currentPlayer]})`);
       alert(`Player ${currentPlayer + 1} wins with ${scores[currentPlayer]}!`);
     }
-  </script></body>
+
+    // Load players when page loads
+    loadPlayersData();
+  </script>
+</body>
 </html>
