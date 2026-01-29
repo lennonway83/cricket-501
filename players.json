@@ -1,1 +1,14 @@
+// Load player stats from local JSON file
+async function loadPlayersData() {
+  try {
+    const response = await fetch('players.json');
+    playersData = await response.json();
+    console.log("Player stats loaded!");
+  } catch (error) {
+    console.error("Failed to load player stats!", error);
+  }
+}
+
+// Call this when the page loads
+loadPlayersData();
 
