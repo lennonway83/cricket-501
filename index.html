@@ -1,0 +1,143 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cricket 501</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0b6623;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #144d2a;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0;
+    }
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #f4c430;
+      font-weight: bold;
+    }
+    select, input {
+      padding: 8px;
+      border-radius: 4px;
+      border: none;
+    }
+    .log {
+      background: #083d1b;
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .player {
+      flex: 1;
+      text-align: center;
+    }
+    .active {
+      border: 2px solid #f4c430;
+      padding: 10px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏏 Cricket 501 🏏</h1>
+  <div class="container">
+    <h2>Choose Category</h2>
+    <div class="row">
+      <select id="categorySelect">
+        <option value="runs">Career Runs (Player)</option>
+        <option value="wickets">Career Wickets (Bowler)</option>
+        <option value="odiHighScore">ODI High Score</option>
+        <option value="testCenturies">Test Centuries</option>
+        <option value="teamScore">Team Match Score</option>
+      </select>
+      <button onclick="newTurn()">New Turn</button>
+    </div><h2>Scores</h2>
+<div class="row">
+  <div id="p1" class="player active">Player 1: <span id="score1">501</span></div>
+  <div id="p2" class="player">Player 2: <span id="score2">501</span></div>
+</div>
+
+<div class="row">
+  <input type="number" id="answerInput" placeholder="Enter numeric answer" />
+  <button onclick="submitAnswer()">Submit</button>
+</div>
+
+<h2>Game Log</h2>
+<div class="log" id="log"></div>
+
+  </div>  <script>
+    let scores = [501, 501];
+    let currentPlayer = 0;
+    const impossibleScores = [163, 166, 169, 172, 173, 175, 176, 178, 179];
+
+    function log(message) {
+      const logDiv = document.getElementById('log');
+      logDiv.innerHTML += `<div>${message}</div>`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function newTurn() {
+      document.getElementById('answerInput').value = '';
+      document.getElementById('categorySelect').disabled = false;
+      log(`Player ${currentPlayer + 1}'s turn started.`);
+    }
+
+    function submitAnswer() {
+      let value = parseInt(document.getElementById('answerInput').value);
+      const category = document.getElementById('categorySelect').selectedOptions[0].text;
+
+      if (isNaN(value)) return alert('Enter a number');
+
+      let score = value;
+
+      if (value > 180 || impossibleScores.includes(value)) {
+        score = 0;
+      }
+
+      scores[currentPlayer] -= score;
+      document.getElementById(`score${currentPlayer + 1}`).innerText = scores[currentPlayer];
+
+      log(`Player ${currentPlayer + 1} (${category}) answered ${value} → Scores ${score}`);
+
+      if (scores[currentPlayer] <= 0 && scores[currentPlayer] >= -10) {
+        checkWin();
+        return;
+      }
+
+      switchPlayer();
+    }
+
+    function switchPlayer() {
+      document.getElementById(`p${currentPlayer + 1}`).classList.remove('active');
+      currentPlayer = (currentPlayer + 1) % 2;
+      document.getElementById(`p${currentPlayer + 1}`).classList.add('active');
+      log(`Now Player ${currentPlayer + 1}'s turn.`);
+    }
+
+    function checkWin() {
+      log(`🎉 Player ${currentPlayer + 1} is in the winning zone! (${scores[currentPlayer]})`);
+      alert(`Player ${currentPlayer + 1} wins with ${scores[currentPlayer]}!`);
+    }
+  </script></body>
+</html>
