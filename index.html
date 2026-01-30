@@ -1,31 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Cricket 501 Game</title>
+  <title>Cricket 501</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    input, button { padding: 8px; margin: 5px; font-size: 16px; }
-    #score { font-size: 24px; margin-top: 20px; }
-    #log { margin-top: 20px; max-height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+    .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+    input, button, select { padding: 10px; margin: 5px 0; width: 100%; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+    #scoreDisplay { font-size: 28px; margin: 20px 0; text-align: center; }
+    #log { max-height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; background: #fafafa; }
+    #log div { margin-bottom: 5px; }
   </style>
 </head>
 <body>
-  <h1>Cricket 501</h1>
-  
-  <input type="text" id="playerInput" placeholder="Enter player name">
-  <button onclick="playTurn()">Play Turn</button>
+  <div class="container">
+    <h1>Cricket 501</h1>
+    <input type="text" id="playerInput" placeholder="Enter player name">
 
-  <div id="score">Current Score: 501</div>
-  <div id="log"></div>
+    <!-- Dropdown to select stat -->
+    <select id="statSelect">
+      <option value="runs" selected>Runs</option>
+      <option value="high_score">High Score</option>
+      <option value="wickets">Wickets</option>
+    </select>
+
+    <button onclick="submitTurn()">Play Turn</button>
+
+    <div id="scoreDisplay">Current Score: 501</div>
+    <div id="log"></div>
+  </div>
 
   <script>
-    // Global variables
+    // ----- GLOBAL VARIABLES -----
     let playersData = [];
-    let currentScore = 501;
     const impossibleScores = [163, 166, 169, 172, 173, 175, 176, 178, 179];
+    let currentScore = 501;
 
-    // Load players.json from GitHub raw URL
-    fetch("https://raw.githubusercontent.com/lennonway83/cricket501/main/players.json")
+    // ----- LOAD PLAYERS.JSON FROM SAME FOLDER -----
+    fetch("players.json")
       .then(response => response.json())
       .then(data => {
         playersData = data;
@@ -33,7 +44,7 @@
       })
       .catch(error => console.error("Failed to load players:", error));
 
-    // Get player stats by name
+    // ----- HELPER FUNCTIONS -----
     function getPlayerStatsByName(name) {
       name = name.toLowerCase().trim();
       for (let p of playersData) {
@@ -46,7 +57,6 @@
       return null;
     }
 
-    // Calculate darts score based on player stats
     function calculateDartScore(playerName, format="ODI") {
       let stats = getPlayerStatsByName(playerName);
       if (!stats) return 0;
@@ -54,8 +64,18 @@
       let stat = stats.find(s => s.type === format);
       if (!stat) return 0;
 
-      let score = stat.runs || 0;
+      const selectedStat = document.getElementById("statSelect").value;
 
+      let score = 0;
+      if (selectedStat === "runs") {
+        score = stat.runs || 0;
+      } else if (selectedStat === "high_score") {
+        score = stat.high_score || 0;
+      } else if (selectedStat === "wickets") {
+        score = stat.wickets || 0;
+      }
+
+      // Apply darts rules
       if (score > 180 || impossibleScores.includes(score)) {
         return 0;
       }
@@ -63,32 +83,36 @@
       return score;
     }
 
-    // Play a turn
-    function playTurn() {
+    function updateLog(message) {
+      const log = document.getElementById("log");
+      const entry = document.createElement("div");
+      entry.textContent = message;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // ----- GAME TURN -----
+    function submitTurn() {
       const input = document.getElementById("playerInput");
       const playerName = input.value;
-      if (!playerName) return alert("Enter a player name!");
+      if (!playerName) return alert("Please enter a player name.");
 
       const scoreThisTurn = calculateDartScore(playerName);
-
       currentScore -= scoreThisTurn;
 
-      const log = document.getElementById("log");
-      log.innerHTML += `<div>${playerName} scored ${scoreThisTurn}. Remaining score: ${currentScore}</div>`;
-      log.scrollTop = log.scrollHeight;
-
-      document.getElementById("score").innerText = "Current Score: " + currentScore;
+      document.getElementById("scoreDisplay").innerText = "Current Score: " + currentScore;
+      updateLog(`${playerName} scored ${scoreThisTurn}. Remaining: ${currentScore}`);
 
       input.value = "";
 
-      // Check win condition
+      // ----- CHECK WIN -----
       if (currentScore <= 0 && currentScore >= -10) {
-        alert(`Game Over! ${playerName} wins with final score ${currentScore}`);
-        currentScore = 501; // reset for new game
-        log.innerHTML = "";
-        document.getElementById("score").innerText = "Current Score: " + currentScore;
+        alert(`${playerName} wins! Final score: ${currentScore}`);
+        currentScore = 501;
+        document.getElementById("scoreDisplay").innerText = "Current Score: " + currentScore;
+        document.getElementById("log").innerHTML = "";
       }
     }
   </script>
 </body>
-</html>     
+</html>
