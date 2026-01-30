@@ -1,129 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Cricket 501</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cricket 501 Game</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0b6623;
-      color: #fff;
-      margin: 0;
-      padding: 20px;
-    }
-    h1, h2 { text-align: center; }
-    .container {
-      max-width: 800px;
-      margin: auto;
-      background: #144d2a;
-      padding: 20px;
-      border-radius: 8px;
-    }
-    .row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 10px 0;
-    }
-    button {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background: #f4c430;
-      font-weight: bold;
-    }
-    select, input {
-      padding: 8px;
-      border-radius: 4px;
-      border: none;
-    }
-    .log {
-      background: #083d1b;
-      padding: 10px;
-      height: 200px;
-      overflow-y: auto;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-    .player {
-      flex: 1;
-      text-align: center;
-    }
-    .active {
-      border: 2px solid #f4c430;
-      padding: 10px;
-      border-radius: 6px;
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, button { padding: 8px; margin: 5px; font-size: 16px; }
+    #score { font-size: 24px; margin-top: 20px; }
+    #log { margin-top: 20px; max-height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; }
   </style>
 </head>
 <body>
-  <h1>🏏 Cricket 501 🏏</h1>
-  <div class="container">
-    <h2>Choose Category</h2>
-    <div class="row">
-      <select id="categorySelect">
-        <option value="odi_runs">ODI Runs</option>
-        <option value="test_runs">Test Runs</option>
-        <option value="t20i_runs">T20I Runs</option>
-        <option value="highest_score">Highest Score</option>
-      </select>
-      <button onclick="newTurn()">New Turn</button>
-    </div>
+  <h1>Cricket 501</h1>
+  
+  <input type="text" id="playerInput" placeholder="Enter player name">
+  <button onclick="playTurn()">Play Turn</button>
 
-    <h2>Scores</h2>
-    <div class="row">
-      <div id="p1" class="player active">Player 1: <span id="score1">501</span></div>
-      <div id="p2" class="player">Player 2: <span id="score2">501</span></div>
-    </div>
-
-    <div class="row">
-      <input type="text" id="answerInput" placeholder="Enter player name" />
-      <button onclick="submitAnswer()">Submit</button>
-    </div>
-
-    <h2>Game Log</h2>
-    <div class="log" id="log"></div>
-  </div>
+  <div id="score">Current Score: 501</div>
+  <div id="log"></div>
 
   <script>
-    // ---------- Player stats container ----------
+    // Global variables
     let playersData = [];
+    let currentScore = 501;
+    const impossibleScores = [163, 166, 169, 172, 173, 175, 176, 178, 179];
 
-    // ---------- Game variables ----------
-    let scores = [501, 501];
-    let currentPlayer = 0;
-    const impossibleScores = [163,166,169,172,173,175,176,178,179];
+    // Load players.json from GitHub raw URL
+    fetch("https://raw.githubusercontent.com/lennonway83/cricket501/main/players.json")
+      .then(response => response.json())
+      .then(data => {
+        playersData = data;
+        console.log("Players loaded:", playersData.length);
+      })
+      .catch(error => console.error("Failed to load players:", error));
 
-    // ---------- Logging function ----------
-    function log(message) {
-      const logDiv = document.getElementById('log');
-      logDiv.innerHTML += `<div>${message}</div>`;
-      logDiv.scrollTop = logDiv.scrollHeight;
-    }
-
-    // ---------- Load player stats from local JSON ----------
-    async function loadPlayersData() {
-      try {
-        const response = await fetch('players.json');
-        playersData = await response.json();
-        log("Player stats loaded!");
-      } catch (error) {
-        console.error("Failed to load player stats!", error);
-        log("Failed to load player stats!");
+    // Get player stats by name
+    function getPlayerStatsByName(name) {
+      name = name.toLowerCase().trim();
+      for (let p of playersData) {
+        if (p.career && p.career.data) {
+          if (p.name.toLowerCase() === name) {
+            return p.career.data;
+          }
+        }
       }
+      return null;
     }
-    loadPlayersData();
 
-    // ---------- Get a player's stat ----------
-    function getPlayerStat(playerName, category) {
-      const player = playersData.find(p => p.name.toLowerCase() === playerName.toLowerCase());
-      if (!player) return 0;
+    // Calculate darts score based on player stats
+    function calculateDartScore(playerName, format="ODI") {
+      let stats = getPlayerStatsByName(playerName);
+      if (!stats) return 0;
 
-      let score = player[category] || 0;
+      let stat = stats.find(s => s.type === format);
+      if (!stat) return 0;
 
-      // Apply darts rules
+      let score = stat.runs || 0;
+
       if (score > 180 || impossibleScores.includes(score)) {
         return 0;
       }
@@ -131,48 +63,32 @@
       return score;
     }
 
-    // ---------- Start a new turn ----------
-    function newTurn() {
-      document.getElementById('answerInput').value = '';
-      document.getElementById('categorySelect').disabled = false;
-      log(`Player ${currentPlayer + 1}'s turn started.`);
-    }
+    // Play a turn
+    function playTurn() {
+      const input = document.getElementById("playerInput");
+      const playerName = input.value;
+      if (!playerName) return alert("Enter a player name!");
 
-    // ---------- Submit player answer ----------
-    function submitAnswer() {
-      const playerName = document.getElementById('answerInput').value.trim();
-      const category = document.getElementById('categorySelect').value;
+      const scoreThisTurn = calculateDartScore(playerName);
 
-      if (!playerName) return alert("Enter a player name");
+      currentScore -= scoreThisTurn;
 
-      const score = getPlayerStat(playerName, category);
+      const log = document.getElementById("log");
+      log.innerHTML += `<div>${playerName} scored ${scoreThisTurn}. Remaining score: ${currentScore}</div>`;
+      log.scrollTop = log.scrollHeight;
 
-      scores[currentPlayer] -= score;
-      document.getElementById(`score${currentPlayer + 1}`).innerText = scores[currentPlayer];
+      document.getElementById("score").innerText = "Current Score: " + currentScore;
 
-      log(`Player ${currentPlayer + 1} answered ${playerName} (${category}) → Score: ${score}`);
+      input.value = "";
 
-      if (scores[currentPlayer] <= 0 && scores[currentPlayer] >= -10) {
-        checkWin();
-        return;
+      // Check win condition
+      if (currentScore <= 0 && currentScore >= -10) {
+        alert(`Game Over! ${playerName} wins with final score ${currentScore}`);
+        currentScore = 501; // reset for new game
+        log.innerHTML = "";
+        document.getElementById("score").innerText = "Current Score: " + currentScore;
       }
-
-      switchPlayer();
-    }
-
-    // ---------- Switch players ----------
-    function switchPlayer() {
-      document.getElementById(`p${currentPlayer + 1}`).classList.remove('active');
-      currentPlayer = (currentPlayer + 1) % 2;
-      document.getElementById(`p${currentPlayer + 1}`).classList.add('active');
-      log(`Now Player ${currentPlayer + 1}'s turn.`);
-    }
-
-    // ---------- Check for a winner ----------
-    function checkWin() {
-      log(`🎉 Player ${currentPlayer + 1} is in the winning zone! (${scores[currentPlayer]})`);
-      alert(`Player ${currentPlayer + 1} wins with ${scores[currentPlayer]}!`);
     }
   </script>
 </body>
-</html>
+</html>     
