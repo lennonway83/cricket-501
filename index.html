@@ -5,7 +5,7 @@
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background: #2ecc71; color: #fff; }
     .container { max-width: 500px; margin: auto; background: #27ae60; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
-    input, button, select { padding: 10px; margin: 5px 0; width: 100%; font-size: 16px; border-radius: 5px; border: 1px solid #fff; background: #27ae60; color: #fff; }
+    select, button { padding: 10px; margin: 5px 0; width: 100%; font-size: 16px; border-radius: 5px; border: 1px solid #fff; background: #27ae60; color: #fff; }
     #scoreDisplay { font-size: 28px; margin: 20px 0; text-align: center; }
     #log { max-height: 200px; overflow-y: scroll; border: 1px solid #fff; padding: 10px; background: #2ecc71; }
     #log div { margin-bottom: 5px; }
@@ -15,12 +15,18 @@
   <div class="container">
     <h1>Cricket 501 - 2 Players</h1>
 
-    <input type="text" id="playerInput" placeholder="Enter player name">
+    <!-- Player selection dropdown -->
+    <select id="playerSelect">
+      <option value="">Loading players...</option>
+    </select>
+
+    <!-- Stat type dropdown -->
     <select id="statSelect">
       <option value="runs" selected>Runs</option>
       <option value="high_score">High Score</option>
       <option value="wickets">Wickets</option>
     </select>
+
     <button onclick="submitTurn()">Play Turn</button>
 
     <div id="scoreDisplay">Player 1: 501 | Player 2: 501</div>
@@ -30,17 +36,29 @@
   <script>
     let playersData = [];
     const impossibleScores = [163, 166, 169, 172, 173, 175, 176, 178, 179];
-    let scores = [501, 501]; // Player 1 and Player 2
-    let turn = 0; // 0 = Player 1, 1 = Player 2
+    let scores = [501, 501];
+    let turn = 0;
 
-    // Load JSON
+    // Load JSON and populate dropdown
     fetch("players.json")
       .then(response => response.json())
       .then(data => {
         playersData = data;
         console.log("Players loaded:", playersData.length);
+        populatePlayerDropdown();
       })
       .catch(error => console.error("Failed to load players:", error));
+
+    function populatePlayerDropdown() {
+      const select = document.getElementById("playerSelect");
+      select.innerHTML = ""; // Clear loading text
+      playersData.forEach(p => {
+        const option = document.createElement("option");
+        option.value = p.name;
+        option.textContent = p.name;
+        select.appendChild(option);
+      });
+    }
 
     function getPlayerStatsByName(name) {
       name = name.toLowerCase().trim();
@@ -80,24 +98,21 @@
     }
 
     function submitTurn() {
-      const input = document.getElementById("playerInput");
-      const playerName = input.value;
-      if (!playerName) return alert("Please enter a player name.");
+      const playerSelect = document.getElementById("playerSelect");
+      const playerName = playerSelect.value;
+      if (!playerName) return alert("Please select a player.");
 
       const scoreThisTurn = calculateDartScore(playerName);
       scores[turn] -= scoreThisTurn;
 
       updateLog(`Player ${turn+1} (${playerName}) scored ${scoreThisTurn}. Remaining: ${scores[turn]}`);
 
-      // Update score display
       document.getElementById("scoreDisplay").innerText = `Player 1: ${scores[0]} | Player 2: ${scores[1]}`;
 
-      input.value = "";
       turn = 1 - turn; // switch turns
 
-      // Check win for current player
       if (scores[1-turn] <= 0 && scores[1-turn] >= -10) {
-        alert(`Player ${1-turn} wins!`);
+        alert(`Player ${1-turn + 1} wins!`);
         scores = [501, 501];
         document.getElementById("scoreDisplay").innerText = `Player 1: 501 | Player 2: 501`;
         document.getElementById("log").innerHTML = "";
