@@ -1,41 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Cricket 501</title>
+  <title>Cricket 501 - 2 Players</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
-    .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
-    input, button, select { padding: 10px; margin: 5px 0; width: 100%; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #2ecc71; color: #fff; }
+    .container { max-width: 500px; margin: auto; background: #27ae60; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
+    input, button, select { padding: 10px; margin: 5px 0; width: 100%; font-size: 16px; border-radius: 5px; border: 1px solid #fff; background: #27ae60; color: #fff; }
     #scoreDisplay { font-size: 28px; margin: 20px 0; text-align: center; }
-    #log { max-height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; background: #fafafa; }
+    #log { max-height: 200px; overflow-y: scroll; border: 1px solid #fff; padding: 10px; background: #2ecc71; }
     #log div { margin-bottom: 5px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Cricket 501</h1>
-    <input type="text" id="playerInput" placeholder="Enter player name">
+    <h1>Cricket 501 - 2 Players</h1>
 
-    <!-- Dropdown to select stat -->
+    <input type="text" id="playerInput" placeholder="Enter player name">
     <select id="statSelect">
       <option value="runs" selected>Runs</option>
       <option value="high_score">High Score</option>
       <option value="wickets">Wickets</option>
     </select>
-
     <button onclick="submitTurn()">Play Turn</button>
 
-    <div id="scoreDisplay">Current Score: 501</div>
+    <div id="scoreDisplay">Player 1: 501 | Player 2: 501</div>
     <div id="log"></div>
   </div>
 
   <script>
-    // ----- GLOBAL VARIABLES -----
     let playersData = [];
     const impossibleScores = [163, 166, 169, 172, 173, 175, 176, 178, 179];
-    let currentScore = 501;
+    let scores = [501, 501]; // Player 1 and Player 2
+    let turn = 0; // 0 = Player 1, 1 = Player 2
 
-    // ----- LOAD PLAYERS.JSON FROM SAME FOLDER -----
+    // Load JSON
     fetch("players.json")
       .then(response => response.json())
       .then(data => {
@@ -44,7 +42,6 @@
       })
       .catch(error => console.error("Failed to load players:", error));
 
-    // ----- HELPER FUNCTIONS -----
     function getPlayerStatsByName(name) {
       name = name.toLowerCase().trim();
       for (let p of playersData) {
@@ -65,21 +62,12 @@
       if (!stat) return 0;
 
       const selectedStat = document.getElementById("statSelect").value;
-
       let score = 0;
-      if (selectedStat === "runs") {
-        score = stat.runs || 0;
-      } else if (selectedStat === "high_score") {
-        score = stat.high_score || 0;
-      } else if (selectedStat === "wickets") {
-        score = stat.wickets || 0;
-      }
+      if (selectedStat === "runs") score = stat.runs || 0;
+      if (selectedStat === "high_score") score = stat.high_score || 0;
+      if (selectedStat === "wickets") score = stat.wickets || 0;
 
-      // Apply darts rules
-      if (score > 180 || impossibleScores.includes(score)) {
-        return 0;
-      }
-
+      if (score > 180 || impossibleScores.includes(score)) return 0;
       return score;
     }
 
@@ -91,26 +79,29 @@
       log.scrollTop = log.scrollHeight;
     }
 
-    // ----- GAME TURN -----
     function submitTurn() {
       const input = document.getElementById("playerInput");
       const playerName = input.value;
       if (!playerName) return alert("Please enter a player name.");
 
       const scoreThisTurn = calculateDartScore(playerName);
-      currentScore -= scoreThisTurn;
+      scores[turn] -= scoreThisTurn;
 
-      document.getElementById("scoreDisplay").innerText = "Current Score: " + currentScore;
-      updateLog(`${playerName} scored ${scoreThisTurn}. Remaining: ${currentScore}`);
+      updateLog(`Player ${turn+1} (${playerName}) scored ${scoreThisTurn}. Remaining: ${scores[turn]}`);
+
+      // Update score display
+      document.getElementById("scoreDisplay").innerText = `Player 1: ${scores[0]} | Player 2: ${scores[1]}`;
 
       input.value = "";
+      turn = 1 - turn; // switch turns
 
-      // ----- CHECK WIN -----
-      if (currentScore <= 0 && currentScore >= -10) {
-        alert(`${playerName} wins! Final score: ${currentScore}`);
-        currentScore = 501;
-        document.getElementById("scoreDisplay").innerText = "Current Score: " + currentScore;
+      // Check win for current player
+      if (scores[1-turn] <= 0 && scores[1-turn] >= -10) {
+        alert(`Player ${1-turn} wins!`);
+        scores = [501, 501];
+        document.getElementById("scoreDisplay").innerText = `Player 1: 501 | Player 2: 501`;
         document.getElementById("log").innerHTML = "";
+        turn = 0;
       }
     }
   </script>
